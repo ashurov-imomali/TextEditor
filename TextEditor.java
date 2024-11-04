@@ -37,7 +37,7 @@ public class TextEditor extends JFrame {
                 int start = textArea.getSelectionStart();
                 int end = textArea.getSelectionEnd();
 
-                if (start != end) { 
+                if (start != end) {
                     StyledDocument doc = textArea.getStyledDocument();
                     Style style = textArea.addStyle("FontStyle", null);
                     StyleConstants.setFontFamily(style, selectedFont);
@@ -264,7 +264,7 @@ public class TextEditor extends JFrame {
         JMenuItem font = new JMenuItem("Шрифт");
         font.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-               showFontDialog();
+                showFontDialog();
             }
         });
         JMenuItem up = new JMenuItem("Увеличить");
