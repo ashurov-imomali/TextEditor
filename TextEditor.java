@@ -1,16 +1,16 @@
 import javax.swing.*;
+import javax.swing.event.CaretListener;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.filechooser.FileNameExtensionFilter;
-import javax.swing.text.Style;
-import javax.swing.text.StyleConstants;
-import javax.swing.text.StyledDocument;
+import javax.swing.text.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.*;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Map;
 
 public class TextEditor extends JFrame {
 
@@ -24,13 +24,40 @@ public class TextEditor extends JFrame {
     JComboBox<String> styleLists = new JComboBox<>(new String[]{"Plain", "Bold", "Italic", "Bold Italic"});
     private Font tFont;
     public TextEditor() {
+        Map<Integer, Integer> mpS = new java.util.HashMap<>(Map.of(8, 0, 10, 1, 12, 2, 14, 3, 16, 4, 18, 5, 20, 6, 22, 7, 24, 8, 26, 9));
+        Map<String, Integer> mpF = new java.util.HashMap<>(Map.of());
+        mpS.put(28,11);
+        mpS.put(30,12);
+        mpS.put(36,13);
+        mpS.put(48,14);
+        mpS.put(72,15);
+        for (int i = 0; i < fontLists.getMaximumRowCount(); i++) {
+            System.out.println(fontLists.getItemAt(i));
+            mpF.put(fontLists.getItemAt(i), i);
+        }
         setTitle("Text Editor");
         tFont = new Font("Arial", Font.PLAIN, 20);
         textArea = new JTextPane();
         JPanel topPanel = new JPanel();
         topPanel.setLayout(new FlowLayout());
         topPanel.setBackground(Color.LIGHT_GRAY); // Установка фона для верхней панели
-
+        textArea.addCaretListener(e -> {
+            int start = textArea.getSelectionStart();
+            int end = textArea.getSelectionEnd();
+            if (start != end){
+                StyledDocument doc = textArea.getStyledDocument();
+                Element elem = doc.getCharacterElement(start);
+                AttributeSet attributes = elem.getAttributes();
+                int fontSize = StyleConstants.getFontSize(attributes);
+                String fontFamily = StyleConstants.getFontFamily(attributes);
+                System.out.println("Font Size: " + fontSize);
+                System.out.println("Font Size <int>: " + mpS.get(fontSize));
+                sizeLists.setSelectedIndex(mpS.get(fontSize));
+                System.out.println("Selected Font: " + fontFamily);
+                System.out.println("Selected Font <int>: " + mpF.get(fontFamily));
+                fontLists.setSelectedIndex(mpF.get(fontFamily));
+            }
+        });
         fontLists.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 String selectedFont = (String) fontLists.getSelectedItem();
