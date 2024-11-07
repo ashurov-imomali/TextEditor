@@ -303,7 +303,7 @@ public class TextEditor extends JFrame {
         // Выпадающий список для выбора размера
         Integer[] sizes = {8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 36, 48, 72};
         JComboBox<Integer> sizeList = new JComboBox<>(sizes);
-//        sizeList.setSelectedIndex(sizeLists.getSelectedIndex()); // Установим по умолчанию 20
+        sizeList.setSelectedIndex(sizeLists.getSelectedIndex()); // Установим по умолчанию 20
         dialog.add(sizeList);
 
         // Выпадающий список для выбора стиля
@@ -394,7 +394,9 @@ public class TextEditor extends JFrame {
                 // Установка цвета текста и фона
                 StyleConstants.setForeground(style, textColor[0]);
                 StyleConstants.setBackground(style, backgroundColor[0]);
-
+                sizeLists.setSelectedIndex(sizeList.getSelectedIndex());
+                fontLists.setSelectedIndex(fontList.getSelectedIndex());
+                styleLists.setSelectedIndex(styleList.getSelectedIndex());
                 // Применяем стиль к выделенному тексту
                 doc.setCharacterAttributes(start, end - start, style, false);
             }
