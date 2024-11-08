@@ -31,7 +31,8 @@ public class TextEditor extends JFrame {
         mpS.put(36,13);
         mpS.put(48,14);
         mpS.put(72,15);
-        for (int i = 0; i < fontLists.getMaximumRowCount(); i++) {
+        System.out.println(fontLists.getItemCount());
+        for (int i = 0; i < fontLists.getItemCount(); i++) {
             System.out.println(fontLists.getItemAt(i));
             mpF.put(fontLists.getItemAt(i), i);
         }
@@ -40,6 +41,9 @@ public class TextEditor extends JFrame {
         textArea = new JTextPane();
         JPanel topPanel = new JPanel();
         topPanel.setLayout(new FlowLayout());
+        fontLists.addItem("Serif");
+        mpF.put("Serif", fontLists.getItemCount() - 1);
+        textArea.setFont(new Font("Serif", Font.PLAIN, 20));
         topPanel.setBackground(Color.LIGHT_GRAY); // Установка фона для верхней панели
         textArea.addCaretListener(e -> {
             int start = textArea.getSelectionStart();
@@ -56,6 +60,16 @@ public class TextEditor extends JFrame {
                 System.out.println("Selected Font: " + fontFamily);
                 System.out.println("Selected Font <int>: " + mpF.get(fontFamily));
                 fontLists.setSelectedIndex(mpF.get(fontFamily));
+                if (StyleConstants.isBold(attributes) && StyleConstants.isItalic(attributes)) {
+                    styleLists.setSelectedIndex(3);
+                }else if (StyleConstants.isBold(attributes)) {
+                    styleLists.setSelectedIndex(1);
+                }else if (StyleConstants.isItalic(attributes)) {
+                    styleLists.setSelectedIndex(2);
+                }
+                else styleLists.setSelectedIndex(0);
+
+
             }
         });
         fontLists.addActionListener(new ActionListener() {
@@ -218,35 +232,120 @@ public class TextEditor extends JFrame {
 
     private void updateStatus() {
         String text = textArea.getText();
-        int paragraphs = text.split("\\n").length; // Подсчет абзацев
-        int sentences = text.split("[.!?]+").length; // Подсчет предложений
-        int words = text.split("\\s+").length; // Подсчет слов
-        int characters = text.length(); // Подсчет символов
-        int charactersWithoutSpaces = text.replace(" ", "").length(); // Символы без пробелов
-        int specialCharacters = text.replaceAll("[\\w\\s]", "").length(); // Специальные символы
-        int latinLetters = countLatinLetters(text); // Латинские буквы
-        int russianLetters = countRussianLetters(text); // Русские буквы
-        int digits = text.replaceAll("\\D", "").length(); // Цифры
-        int punctuationMarks = countPunctuationMarks(text); // Знаки препинания
+
+        // Подсчёт абзацев (по разрыву строк, учитывая разные платформы)
+        int paragraphs = text.split("\\r?\\n").length;
+
+        // Подсчёт предложений (разделение по точкам, восклицательным знакам и вопросительным знакам)
+        // Это регулярное выражение теперь правильно учитывает окончание предложений, игнорируя точки в числах, аббревиатурах и т. д.
+        int sentences = countSentences(text);
+
+        // Подсчёт слов
+        int words = countWords(text);
+
+        // Подсчёт символов
+        int characters = text.length();
+
+        // Символы без пробелов
+        int charactersWithoutSpaces = text.replace(" ", "").length();
+
+        // Подсчёт спецсимволов (всё, что не является буквами и цифрами, исключая точку)
+        int specialCharacters = countSpecialCharacters(text);
+
+        // Подсчёт латинских букв
+        int latinLetters = countLatinLetters(text);
+
+        // Подсчёт русских букв
+        int russianLetters = countRussianLetters(text);
+
+        // Подсчёт цифр
+        int digits = text.replaceAll("\\D", "").length();
+
+        // Подсчёт знаков препинания
+        int punctuationMarks = countPunctuationMarks(text);
 
         // Обновление строки состояния
-        statusLabel.setText(String.format("Абзацы: %d | Предложения: %d | Слова: %d | Символы: %d | " +
-                        "Символы без пробелов: %d | Спец. символы: %d | Лат. буквы: %d | Рус. буквы: %d | " +
-                        "Цифры: %d | Знаки препинания: %d",
+        statusLabel.setText(String.format(
+                "Абзацы: %d | Предложения: %d | Слова: %d | Символы: %d | " +
+                        "Символы без пробелов: %d | Спец. символы: %d | Лат. буквы: %d | " +
+                        "Рус. буквы: %d | Цифры: %d | Знаки препинания: %d",
                 paragraphs, sentences, words, characters, charactersWithoutSpaces,
-                specialCharacters, latinLetters, russianLetters, digits, punctuationMarks));
+                specialCharacters, latinLetters, russianLetters, digits, punctuationMarks
+        ));
     }
+
+
+
+    public static int countWords(String text) {
+        if (text == null || text.isEmpty()) {
+            return 0;
+        }
+
+        // Разделяем текст по пробельным символам
+        String[] words = text.trim().split("\\s+");
+
+        int wordCount = 0;
+        for (String word : words) {
+            // Убираем знаки препинания в конце и в начале слова
+            word = word.replaceAll("[^a-zA-Zа-яА-ЯёЁ0-9]+$", "").replaceAll("^[^a-zA-Zа-яА-ЯёЁ0-9]+", "");
+
+            // Проверяем, что слово состоит из букв или цифр
+            if (!word.isEmpty() && word.matches("[a-zA-Zа-яА-ЯёЁ0-9]+")) {
+                wordCount++;
+            }
+        }
+
+        return wordCount;
+    }
+
+
+    // Метод подсчёта предложений
+    public static int countSentences(String text) {
+        if (text == null || text.isEmpty()) {
+            return 0;
+        }
+
+        // Разделяем текст по символам окончания предложения: точка, восклицательный и вопросительный знаки
+        String[] sentences = text.split("[.!?]");
+
+        // Фильтруем пустые строки, если они появились после разделения
+        int sentenceCount = 0;
+        for (String sentence : sentences) {
+            if (!sentence.trim().isEmpty()) {
+                sentenceCount++;
+            }
+        }
+
+        return sentenceCount;
+    }
+
+    private int countSpecialCharacters(String text) {
+        int count = 0;
+        for (int i = 0; i < text.length(); i++) {
+            if (text.charAt(i) == '!' || text.charAt(i) == '@'
+                    ||text.charAt(i) == '#' || text.charAt(i) == '$' || text.charAt(i) == '%'
+            || text.charAt(i) == '^' || text.charAt(i) == '&') {
+                count++;
+            }
+        }
+        return count;
+    }
+
+    // Метод подсчёта латинских букв
     private int countLatinLetters(String text) {
-        return (int) text.chars().filter(ch -> Character.UnicodeScript.of(ch) == Character.UnicodeScript.LATIN).count();
+        return (int) text.chars().filter(c -> (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z')).count();
     }
 
+    // Метод подсчёта русских букв
     private int countRussianLetters(String text) {
-        return (int) text.chars().filter(ch -> Character.UnicodeScript.of(ch) == Character.UnicodeScript.CYRILLIC).count();
+        return (int) text.chars().filter(c -> (c >= 'а' && c <= 'я') || (c >= 'А' && c <= 'Я')).count();
     }
 
+    // Метод подсчёта знаков препинания
     private int countPunctuationMarks(String text) {
-        return (int) text.chars().filter(ch -> String.valueOf((char) ch).matches("[.,!?;:()\"'\\[\\]{}]")).count();
+        return (int) text.chars().filter(c -> ",.;!?-:()\"'".indexOf(c) >= 0).count();
     }
+
     public JMenuBar GetMenuBars(){
         JMenuBar menuBar = new JMenuBar();
         JMenu fileMenu = new JMenu("Файл");
